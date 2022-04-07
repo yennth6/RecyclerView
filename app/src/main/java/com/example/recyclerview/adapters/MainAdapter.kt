@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.R
+import com.example.recyclerview.Toaster
 import com.example.recyclerview.model.Banner
 import com.example.recyclerview.model.Song
 import com.example.recyclerview.view_holder.ItemSongViewHolder
@@ -14,12 +15,8 @@ import com.example.recyclerview.view_holder.ItemTextViewHolder
 import com.example.recyclerview.view_holder.ListAlbumViewHolder
 import com.example.recyclerview.view_holder.ListBannerViewHolder
 
-class MainAdapter(private val mainList: ArrayList<Any>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-    private val ARRAY_BANNER = 0
-    private val ARRAY_ALBUM = 1
-    private val SONG = 2
-    private val TEXT = 3
-
+class MainAdapter(private val mainList: ArrayList<Any>, private val toaster: Toaster) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    var albumAdapter: ListAlbumAdapter? = null
     override fun getItemViewType(position: Int): Int {
         when (mainList[position]) {
             is ArrayList<*> -> {
@@ -52,7 +49,17 @@ class MainAdapter(private val mainList: ArrayList<Any>) : RecyclerView.Adapter<R
             SONG -> {
                 val itemSong =
                     layoutInflater.inflate(R.layout.item_song, parent, false)
-                return ItemSongViewHolder(itemSong)
+                val holder = ItemSongViewHolder(itemSong)
+                holder.textDelete.setOnClickListener {
+                    Log.d("MainAdapter", "${holder.adapterPosition}")
+                    mainList.removeAt(holder.adapterPosition)
+                    this.notifyItemRemoved(holder.adapterPosition)
+                    this.notifyItemChanged(mainList.size - 1, true)
+                }
+                holder.itemView.setOnClickListener {
+                    toaster.showToast(holder.adapterPosition, null)
+                }
+                return holder
             }
             TEXT -> {
                 val itemText =
@@ -84,24 +91,46 @@ class MainAdapter(private val mainList: ArrayList<Any>) : RecyclerView.Adapter<R
                     LinearLayoutManager.HORIZONTAL, false)
                 bannerViewHolder.recyclerView.layoutManager = layoutManager
 
-                val adapter = ListBannerAdapter(bannerList)
+                val adapter = ListBannerAdapter(bannerList, toaster,
+                    bannerViewHolder.adapterPosition)
                 bannerViewHolder.recyclerView.adapter = adapter
             }
             ARRAY_ALBUM -> {
                 val albumViewHolder = holder as ListAlbumViewHolder
                 val albumList = mainList[position] as ArrayList<*>
-                Log.d("MainAdapter", albumList.toString())
                 val layoutManager = GridLayoutManager(albumViewHolder.recyclerView.context, 2)
                 albumViewHolder.recyclerView.layoutManager = layoutManager
 
-                val adapter = ListAlbumAdapter(albumList)
-                albumViewHolder.recyclerView.adapter = adapter
+                albumAdapter = ListAlbumAdapter(albumList, toaster, albumViewHolder.adapterPosition)
+                albumViewHolder.recyclerView.adapter = albumAdapter
             }
 
         }
     }
 
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isNotEmpty()) {
+            if (payloads[0] is Boolean) {
+                albumAdapter?.parentPosition = albumAdapter?.parentPosition?.minus(1)!!
+            }
+        }
+        else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     override fun getItemCount(): Int {
         return mainList.size
+    }
+
+    companion object {
+        private  const val ARRAY_BANNER = 0
+        private const val ARRAY_ALBUM = 1
+        private const val SONG = 2
+        private const val TEXT = 3
     }
 }
