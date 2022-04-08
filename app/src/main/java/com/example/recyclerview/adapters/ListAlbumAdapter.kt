@@ -8,31 +8,37 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.R
 import com.example.recyclerview.Toaster
+import com.example.recyclerview.data.MainViewModel
 import com.example.recyclerview.model.Album
 
 class ListAlbumAdapter(private val albumList: ArrayList<*>,
                        private val toaster: Toaster,
-                       var parentPosition: Int) :
+                       private val parentPosition: Int,
+                       private val viewModel: MainViewModel) :
     RecyclerView.Adapter<ListAlbumAdapter.ViewHolder>() {
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val albumImage: ImageView = view.findViewById(R.id.image_album)
         val albumName: TextView = view.findViewById(R.id.text_album_name)
-        val textDelete: TextView = view.findViewById(R.id.text_delete_album)
+        private val textDelete: TextView = view.findViewById(R.id.text_delete_album)
+
+        init {
+            textDelete.setOnClickListener {
+//                albumList.removeAt(adapterPosition)
+//                notifyItemRemoved(adapterPosition)
+                viewModel.deleteItem(parentPosition, adapterPosition)
+            }
+            itemView.setOnClickListener {
+                toaster.showToast(parentPosition, adapterPosition)
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_album, parent, false)
 
-        val holder =  ViewHolder(view)
-        holder.textDelete.setOnClickListener {
-            albumList.removeAt(holder.adapterPosition)
-            this.notifyItemRemoved(holder.adapterPosition)
-        }
-        holder.itemView.setOnClickListener {
-            toaster.showToast(parentPosition, holder.adapterPosition)
-        }
-        return holder
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {

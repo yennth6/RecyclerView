@@ -2,50 +2,80 @@ package com.example.recyclerview
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.activity.viewModels
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.adapters.MainAdapter
-import com.example.recyclerview.model.Album
-import com.example.recyclerview.model.Banner
-import com.example.recyclerview.model.Song
-import com.example.recyclerview.utils.DataUtil
+import com.example.recyclerview.data.MainRepository
+import com.example.recyclerview.data.MainViewModel
+import com.example.recyclerview.data.MainViewModelFactory
+import com.example.recyclerview.utils.*
 
 
-class MainActivity : AppCompatActivity(), Toaster {
+class MainActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
-    lateinit var mainList: ArrayList<Any>
+    private lateinit var mainList: ArrayList<MainType>
+    private val repository: MainRepository = MainRepository()
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModelFactory(repository)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initRecyclerView()
+    }
+
+    private fun initRecyclerView() {
         recyclerView = findViewById(R.id.main_recycler_view)
+//        mainList = DataUtil.getMainList()
+        mainList = mainViewModel.data.value!!
 
-        mainList = DataUtil.getMainList()
-        val mainAdapter = MainAdapter(mainList, this)
+        val mainAdapter = MainAdapter(mainViewModel, object : Toaster {
+            override fun showToast(position: Int, childPosition: Int?) {
+                myShowToast(position, childPosition)
+            }
+        })
 
-        val layoutManager = LinearLayoutManager(this)
-        recyclerView.layoutManager = layoutManager
+
         recyclerView.adapter = mainAdapter
-    }
-
-    override fun showToast(position: Int, childPosition: Int?) {
-        val message: String
-        var content = ""
-        if (childPosition == null) {
-            if (mainList[position] is Song) {
-                content = "Song: ${(mainList[position] as Song).name}"
-            }
-        } else { // childPosition != null -> ArrayList
-            val arrayList = mainList[position] as ArrayList<*>
-            if (arrayList.firstOrNull() is Banner) {
-                content = "Banner pos: $childPosition"
-            } else if (arrayList.firstOrNull() is Album) {
-                content = "Album: ${(arrayList[childPosition] as Album).name}"
-            }
+        mainViewModel.data.observe(this) {
+            Log.d("MainActivity", "Update")
+            Log.d("MainActivity", it.size.toString())
+            mainAdapter.submitList(it.toMutableList())
         }
-        message = "pos: $position , $content"
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
+     fun myShowToast(position: Int, childPosition: Int?) {
+         val message: String
+         var content = ""
+        val mainList = mainViewModel.data.value!!
+         when(mainList[position]) {
+             is SongType -> {
+                 content = "Song: ${(mainList[position] as SongType).song.name}"
+             }
+
+             is ListBannerType -> {
+                 childPosition?. let { content = "Banner pos: $childPosition" }
+             }
+
+             is ListAlbumType -> {
+                 childPosition?.let {
+                     val album = ((mainList[position] as ListAlbumType).albums)[childPosition]
+                     content = "Album: ${album.name}"
+                 }
+             }
+
+             else -> {
+
+             }
+         }
+
+         message = "pos: $position , $content"
+         Log.d("MainActivity", "showToast message $message")
+
+         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
 
 }
