@@ -5,20 +5,20 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.R
-import com.example.recyclerview.Toaster
-import com.example.recyclerview.data.MainViewModel
 import com.example.recyclerview.utils.*
 import com.example.recyclerview.view_holder.ItemSongViewHolder
 import com.example.recyclerview.view_holder.ItemTextViewHolder
 import com.example.recyclerview.view_holder.ListAlbumViewHolder
 import com.example.recyclerview.view_holder.ListBannerViewHolder
 
-class MainAdapter(private val viewModel: MainViewModel, private val toaster: Toaster) :
-    ListAdapter<MainType, RecyclerView.ViewHolder>(CallBack()) {
-    private var albumAdapter: ListAlbumAdapter? = null
-    private val mainList = viewModel.data.value !!
+class MainAdapter(private val onItemHome: OnItemHomeClickListener) :
+    ListAdapter<MainType, RecyclerView.ViewHolder>(MainCallBack()) {
+
+    var listAlbumAdapter: ListAlbumAdapter = ListAlbumAdapter(onItemHome, -1)
+    var listBannerAdapter: ListBannerAdapter = ListBannerAdapter(onItemHome, -1)
+
     override fun getItemViewType(position: Int): Int {
-        return when (mainList[position]) {
+        return when (getItem(position)) {
             is ListBannerType -> {
                 ARRAY_BANNER
             }
@@ -33,6 +33,7 @@ class MainAdapter(private val viewModel: MainViewModel, private val toaster: Toa
             }
         }
     }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         when (viewType) {
@@ -49,7 +50,7 @@ class MainAdapter(private val viewModel: MainViewModel, private val toaster: Toa
             SONG -> {
                 val itemSong =
                     layoutInflater.inflate(R.layout.item_song, parent, false)
-                return ItemSongViewHolder(itemSong, toaster, viewModel)
+                return ItemSongViewHolder(itemSong, onItemHome)
             }
             TEXT -> {
                 val itemText =
@@ -63,61 +64,31 @@ class MainAdapter(private val viewModel: MainViewModel, private val toaster: Toa
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when(getItemViewType(position)) {
+        when (getItemViewType(position)) {
             TEXT -> {
                 val textViewHolder = holder as ItemTextViewHolder
-                textViewHolder.textView.text = (mainList[position] as FieldTitleType).title
+                textViewHolder.textView.text = (getItem(position) as FieldTitleType).title
             }
             SONG -> {
                 val songViewHolder = holder as ItemSongViewHolder
-                val song = (mainList[position] as SongType).song
+                val song = (getItem(position) as SongType).song
                 songViewHolder.imageSong.setImageResource(song.image)
                 songViewHolder.textSongName.text = song.name
             }
             ARRAY_BANNER -> {
                 val bannerViewHolder = holder as ListBannerViewHolder
-                val bannerList =( mainList[position] as ListBannerType).banners
-                val adapter = ListBannerAdapter(bannerList, toaster,
-                    bannerViewHolder.adapterPosition, viewModel)
-                bannerViewHolder.recyclerView.adapter = adapter
+                bannerViewHolder.recyclerView.adapter = listBannerAdapter
             }
             ARRAY_ALBUM -> {
                 val albumViewHolder = holder as ListAlbumViewHolder
-                val albumList = (mainList[position] as ListAlbumType).albums
-
-                albumAdapter = ListAlbumAdapter(albumList, toaster,
-                    albumViewHolder.adapterPosition, viewModel)
-                albumViewHolder.recyclerView.adapter = albumAdapter
+                albumViewHolder.recyclerView.adapter = listAlbumAdapter
             }
 
         }
     }
 
-//    override fun onBindViewHolder(
-//        holder: RecyclerView.ViewHolder,
-//        position: Int,
-//        payloads: MutableList<Any>
-//    ) {
-//        if (payloads.isNotEmpty()) {
-//            if (payloads[0] is Boolean) {
-//                albumAdapter?.parentPosition = albumAdapter?.parentPosition?.minus(1)!!
-//            }
-//        }
-//        else {
-//            super.onBindViewHolder(holder, position, payloads)
-//        }
-//    }
-
-    override fun getItemCount(): Int {
-        return mainList.size
-    }
-
-    fun getListItems(): ArrayList<MainType> {
-        return mainList
-    }
-
     companion object {
-        private  const val ARRAY_BANNER = 0
+        private const val ARRAY_BANNER = 0
         private const val ARRAY_ALBUM = 1
         private const val SONG = 2
         private const val TEXT = 3

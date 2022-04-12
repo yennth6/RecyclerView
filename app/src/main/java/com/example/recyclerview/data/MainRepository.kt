@@ -56,12 +56,25 @@ class MainRepository {
             ListAlbumType(albums)
         )
     }
+    fun getListPosition(): Pair<Int, Int> {
+        var listBannerPos = -1
+        var listAlbumPos = -1
+        for (i in 0 until dataList.size) {
+            if (dataList[i] is ListBannerType) {
+                listBannerPos = i
+            }
+            if (dataList[i] is ListAlbumType) {
+                listAlbumPos = i
+            }
+        }
+        return Pair(listBannerPos, listAlbumPos)
+    }
     fun getData(): ArrayList<MainType> {
         return dataList
     }
-    fun deleteItem(position: Int, childPosition: Int?): ArrayList<MainType> {
+    fun deleteItem(position: Int, childPosition: Int): ArrayList<MainType> {
         Log.d("MainRepository", "Del")
-        if (childPosition == null) {
+        if (childPosition == -1) {
             dataList.removeAt(position)
         } else {
             when (val list = dataList[position]) {
@@ -72,7 +85,7 @@ class MainRepository {
                     list.banners.removeAt(childPosition)
                 }
                 else -> {
-
+                    Log.d("MainRepository", "else")
                 }
             }
 

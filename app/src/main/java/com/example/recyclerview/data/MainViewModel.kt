@@ -1,6 +1,5 @@
 package com.example.recyclerview.data
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,9 +10,8 @@ class MainViewModel constructor(private val repository: MainRepository) : ViewMo
     private val dataList = MutableLiveData(rawData)
 
     val data: LiveData<ArrayList<MainType>> get() = dataList
-
-
-    fun deleteItem(position: Int, childPosition: Int?) {
+    val listPositions: LiveData<Pair<Int, Int>> get() = MutableLiveData(repository.getListPosition())
+    fun deleteItem(position: Int, childPosition: Int) {
             dataList.value = repository.deleteItem(position, childPosition)
     }
 }

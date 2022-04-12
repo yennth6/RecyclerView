@@ -2,12 +2,11 @@ package com.example.recyclerview
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.adapters.MainAdapter
+import com.example.recyclerview.adapters.OnItemHomeClickListener
 import com.example.recyclerview.data.MainRepository
 import com.example.recyclerview.data.MainViewModel
 import com.example.recyclerview.data.MainViewModelFactory
@@ -16,7 +15,6 @@ import com.example.recyclerview.utils.*
 
 class MainActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
-    private lateinit var mainList: ArrayList<MainType>
     private val repository: MainRepository = MainRepository()
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModelFactory(repository)
@@ -29,42 +27,50 @@ class MainActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         recyclerView = findViewById(R.id.main_recycler_view)
-//        mainList = DataUtil.getMainList()
-        mainList = mainViewModel.data.value!!
 
-        val mainAdapter = MainAdapter(mainViewModel, object : Toaster {
-            override fun showToast(position: Int, childPosition: Int?) {
-                myShowToast(position, childPosition)
+        val mainAdapter = MainAdapter(object  : OnItemHomeClickListener {
+            override fun onClickItem(parentPosition: Int, childPosition: Int) {
+                showToast(parentPosition, childPosition)
             }
+
+            override fun onClickDeleteItem(parentPosition: Int, childPosition: Int) {
+                mainViewModel.deleteItem(parentPosition, childPosition)
+            }
+
         })
 
 
         recyclerView.adapter = mainAdapter
         mainViewModel.data.observe(this) {
-            Log.d("MainActivity", "Update")
-            Log.d("MainActivity", it.size.toString())
+            val (bannersPos, albumsPos) = mainViewModel.listPositions.value!!
+            val banners = ArrayList((it[bannersPos] as ListBannerType).banners)
+            val albums = ArrayList((it[albumsPos] as ListAlbumType).albums)
+
             mainAdapter.submitList(it.toMutableList())
+            mainAdapter.listBannerAdapter.submitList(banners)
+            mainAdapter.listAlbumAdapter.submitList(albums)
+
+            mainAdapter.listBannerAdapter.parentPosition = bannersPos
+            mainAdapter.listAlbumAdapter.parentPosition = albumsPos
         }
     }
 
-     fun myShowToast(position: Int, childPosition: Int?) {
+     fun showToast(position: Int, childPosition: Int) {
          val message: String
          var content = ""
-        val mainList = mainViewModel.data.value!!
+         val mainList = mainViewModel.data.value!!
          when(mainList[position]) {
              is SongType -> {
                  content = "Song: ${(mainList[position] as SongType).song.name}"
              }
 
              is ListBannerType -> {
-                 childPosition?. let { content = "Banner pos: $childPosition" }
+                 content = "Banner pos: $childPosition"
              }
 
              is ListAlbumType -> {
-                 childPosition?.let {
-                     val album = ((mainList[position] as ListAlbumType).albums)[childPosition]
-                     content = "Album: ${album.name}"
-                 }
+                 val album = ((mainList[position] as ListAlbumType).albums)[childPosition]
+                 content = "Album: ${album.name}"
              }
 
              else -> {
@@ -73,8 +79,6 @@ class MainActivity : AppCompatActivity() {
          }
 
          message = "pos: $position , $content"
-         Log.d("MainActivity", "showToast message $message")
-
          Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 

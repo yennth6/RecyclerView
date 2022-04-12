@@ -5,17 +5,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.R
-import com.example.recyclerview.Toaster
-import com.example.recyclerview.data.MainViewModel
 import com.example.recyclerview.model.Album
 
-class ListAlbumAdapter(private val albumList: ArrayList<*>,
-                       private val toaster: Toaster,
-                       private val parentPosition: Int,
-                       private val viewModel: MainViewModel) :
-    RecyclerView.Adapter<ListAlbumAdapter.ViewHolder>() {
+class ListAlbumAdapter(val listener: OnItemHomeClickListener, var parentPosition: Int) :
+    ListAdapter<Album, ListAlbumAdapter.ViewHolder>(AlbumCallback()) {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val albumImage: ImageView = view.findViewById(R.id.image_album)
@@ -24,12 +20,10 @@ class ListAlbumAdapter(private val albumList: ArrayList<*>,
 
         init {
             textDelete.setOnClickListener {
-//                albumList.removeAt(adapterPosition)
-//                notifyItemRemoved(adapterPosition)
-                viewModel.deleteItem(parentPosition, adapterPosition)
+                listener.onClickDeleteItem(parentPosition, adapterPosition)
             }
             itemView.setOnClickListener {
-                toaster.showToast(parentPosition, adapterPosition)
+                listener.onClickItem(parentPosition, adapterPosition)
             }
         }
     }
@@ -37,17 +31,12 @@ class ListAlbumAdapter(private val albumList: ArrayList<*>,
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_album, parent, false)
-
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val album = albumList[position] as Album
+        val album = getItem(position)
         holder.albumImage.setImageResource(album.image)
         holder.albumName.text = album.name
-    }
-
-    override fun getItemCount(): Int {
-        return albumList.size
     }
 }
