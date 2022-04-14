@@ -7,10 +7,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.recyclerview.R
-import com.example.recyclerview.model.Album
+import com.example.recyclerview.data.model.Album
 
-class ListAlbumAdapter(val listener: OnItemHomeClickListener, var parentPosition: Int) :
+class ListAlbumAdapter(val listener: MainAdapter.OnNestedItemClickListener) :
     ListAdapter<Album, ListAlbumAdapter.ViewHolder>(AlbumCallback()) {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -20,10 +21,10 @@ class ListAlbumAdapter(val listener: OnItemHomeClickListener, var parentPosition
 
         init {
             textDelete.setOnClickListener {
-                listener.onClickDeleteItem(parentPosition, adapterPosition)
+                listener.onItemClickDelete(adapterPosition)
             }
             itemView.setOnClickListener {
-                listener.onClickItem(parentPosition, adapterPosition)
+                listener.onItemClick(adapterPosition)
             }
         }
     }
@@ -36,7 +37,7 @@ class ListAlbumAdapter(val listener: OnItemHomeClickListener, var parentPosition
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val album = getItem(position)
-        holder.albumImage.setImageResource(album.image)
+        Glide.with(holder.albumImage.context).load(album.image).into(holder.albumImage)
         holder.albumName.text = album.name
     }
 }

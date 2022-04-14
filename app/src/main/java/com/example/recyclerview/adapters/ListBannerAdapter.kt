@@ -8,9 +8,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recyclerview.R
-import com.example.recyclerview.model.Banner
+import com.example.recyclerview.data.model.Banner
 
-class ListBannerAdapter(val listener: OnItemHomeClickListener, var parentPosition: Int) :
+class ListBannerAdapter(val listener: MainAdapter.OnNestedItemClickListener) :
     ListAdapter<Banner, ListBannerAdapter.ViewHolder>(BannerCallback()) {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -19,10 +19,10 @@ class ListBannerAdapter(val listener: OnItemHomeClickListener, var parentPositio
 
         init {
             textDelete.setOnClickListener {
-                listener.onClickDeleteItem(parentPosition, adapterPosition)
+                listener.onItemClickDelete(adapterPosition)
             }
             itemView.setOnClickListener {
-                listener.onClickItem(parentPosition, adapterPosition)
+                listener.onItemClick(adapterPosition)
             }
         }
     }

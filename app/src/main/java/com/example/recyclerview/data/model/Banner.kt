@@ -1,4 +1,4 @@
-package com.example.recyclerview.model
+package com.example.recyclerview.data.model
 
 import com.example.recyclerview.R
 

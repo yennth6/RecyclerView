@@ -4,8 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.recyclerview.R
-import com.example.recyclerview.utils.*
+import com.example.recyclerview.data.model.*
 import com.example.recyclerview.view_holder.ItemSongViewHolder
 import com.example.recyclerview.view_holder.ItemTextViewHolder
 import com.example.recyclerview.view_holder.ListAlbumViewHolder
@@ -13,9 +14,6 @@ import com.example.recyclerview.view_holder.ListBannerViewHolder
 
 class MainAdapter(private val onItemHome: OnItemHomeClickListener) :
     ListAdapter<MainType, RecyclerView.ViewHolder>(MainCallBack()) {
-
-    var listAlbumAdapter: ListAlbumAdapter = ListAlbumAdapter(onItemHome, -1)
-    var listBannerAdapter: ListBannerAdapter = ListBannerAdapter(onItemHome, -1)
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
@@ -72,18 +70,65 @@ class MainAdapter(private val onItemHome: OnItemHomeClickListener) :
             SONG -> {
                 val songViewHolder = holder as ItemSongViewHolder
                 val song = (getItem(position) as SongType).song
-                songViewHolder.imageSong.setImageResource(song.image)
-                songViewHolder.textSongName.text = song.name
+                Glide.with(songViewHolder.imageSong.context)
+                    .load(song.image).into(songViewHolder.imageSong)
+                songViewHolder.textSongName.text = song.title
             }
             ARRAY_BANNER -> {
                 val bannerViewHolder = holder as ListBannerViewHolder
-                bannerViewHolder.recyclerView.adapter = listBannerAdapter
+
+                val adapter = ListBannerAdapter(object : OnNestedItemClickListener {
+                    override fun onItemClick(position: Int) {
+                        onItemHome.onClickItem(bannerViewHolder.adapterPosition, position)
+                    }
+
+                    override fun onItemClickDelete(position: Int) {
+                        onItemHome.onClickDeleteItem(bannerViewHolder.adapterPosition, position)
+                    }
+                })
+                bannerViewHolder.recyclerView.adapter = adapter
+                adapter.submitList(ArrayList((getItem(position) as ListBannerType).banners))
+
             }
             ARRAY_ALBUM -> {
                 val albumViewHolder = holder as ListAlbumViewHolder
-                albumViewHolder.recyclerView.adapter = listAlbumAdapter
-            }
 
+                val adapter = ListAlbumAdapter(object : OnNestedItemClickListener {
+                    override fun onItemClick(position: Int) {
+                        onItemHome.onClickItem(albumViewHolder.adapterPosition, position)
+                    }
+
+                    override fun onItemClickDelete(position: Int) {
+                        onItemHome.onClickDeleteItem(albumViewHolder.adapterPosition, position)
+                    }
+                })
+                albumViewHolder.recyclerView.adapter = adapter
+                adapter.submitList(ArrayList((getItem(position) as ListAlbumType).albums))
+            }
+        }
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isNullOrEmpty()) {
+            super.onBindViewHolder(holder, position, payloads)
+        } else {
+            if (payloads[0] == true) {
+                when (holder) {
+                    is ListBannerViewHolder -> {
+                        (holder.recyclerView.adapter as ListBannerAdapter)
+                            .submitList(ArrayList((getItem(0) as ListBannerType).banners))
+                    }
+                    is ListAlbumViewHolder -> {
+                        val albums = (getItem(itemCount - 1) as ListAlbumType).albums
+                        (holder.recyclerView.adapter as ListAlbumAdapter)
+                            .submitList(ArrayList(albums))
+                    }
+                }
+            }
         }
     }
 
@@ -92,5 +137,10 @@ class MainAdapter(private val onItemHome: OnItemHomeClickListener) :
         private const val ARRAY_ALBUM = 1
         private const val SONG = 2
         private const val TEXT = 3
+    }
+
+    interface OnNestedItemClickListener {
+        fun onItemClick(position: Int)
+        fun onItemClickDelete(position: Int)
     }
 }

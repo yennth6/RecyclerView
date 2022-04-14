@@ -10,15 +10,22 @@ import com.example.recyclerview.adapters.OnItemHomeClickListener
 import com.example.recyclerview.data.MainRepository
 import com.example.recyclerview.data.MainViewModel
 import com.example.recyclerview.data.MainViewModelFactory
-import com.example.recyclerview.utils.*
+import com.example.recyclerview.data.api.ApiHelper
+import com.example.recyclerview.data.api.RetrofitBuilder
+import com.example.recyclerview.data.model.ListAlbumType
+import com.example.recyclerview.data.model.ListBannerType
+import com.example.recyclerview.data.model.SongType
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
-    private val repository: MainRepository = MainRepository()
+
+    private val apiHelper = ApiHelper(RetrofitBuilder.retrofit)
+    private val repository: MainRepository = MainRepository(apiHelper)
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModelFactory(repository)
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -28,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private fun initRecyclerView() {
         recyclerView = findViewById(R.id.main_recycler_view)
 
-        val mainAdapter = MainAdapter(object  : OnItemHomeClickListener {
+        val mainAdapter = MainAdapter(object : OnItemHomeClickListener {
             override fun onClickItem(parentPosition: Int, childPosition: Int) {
                 showToast(parentPosition, childPosition)
             }
@@ -39,47 +46,37 @@ class MainActivity : AppCompatActivity() {
 
         })
 
-
         recyclerView.adapter = mainAdapter
         mainViewModel.data.observe(this) {
-            val (bannersPos, albumsPos) = mainViewModel.listPositions.value!!
-            val banners = ArrayList((it[bannersPos] as ListBannerType).banners)
-            val albums = ArrayList((it[albumsPos] as ListAlbumType).albums)
-
-            mainAdapter.submitList(it.toMutableList())
-            mainAdapter.listBannerAdapter.submitList(banners)
-            mainAdapter.listAlbumAdapter.submitList(albums)
-
-            mainAdapter.listBannerAdapter.parentPosition = bannersPos
-            mainAdapter.listAlbumAdapter.parentPosition = albumsPos
+            mainAdapter.submitList(it?.toMutableList())
         }
     }
 
-     fun showToast(position: Int, childPosition: Int) {
-         val message: String
-         var content = ""
-         val mainList = mainViewModel.data.value!!
-         when(mainList[position]) {
-             is SongType -> {
-                 content = "Song: ${(mainList[position] as SongType).song.name}"
-             }
+    fun showToast(position: Int, childPosition: Int) {
+        val message: String
+        var content = ""
+        val mainList = mainViewModel.data.value!!
+        when (mainList[position]) {
+            is SongType -> {
+                content = "Song: ${(mainList[position] as SongType).song.title}"
+            }
 
-             is ListBannerType -> {
-                 content = "Banner pos: $childPosition"
-             }
+            is ListBannerType -> {
+                content = "Banner pos: $childPosition"
+            }
 
-             is ListAlbumType -> {
-                 val album = ((mainList[position] as ListAlbumType).albums)[childPosition]
-                 content = "Album: ${album.name}"
-             }
+            is ListAlbumType -> {
+                val album = ((mainList[position] as ListAlbumType).albums)[childPosition]
+                content = "Album: ${album.name}"
+            }
 
-             else -> {
+            else -> {
 
-             }
-         }
+            }
+        }
 
-         message = "pos: $position , $content"
-         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        message = "pos: $position , $content"
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
 }

@@ -1,8 +1,4 @@
-package com.example.recyclerview.utils
-
-import com.example.recyclerview.model.Album
-import com.example.recyclerview.model.Banner
-import com.example.recyclerview.model.Song
+package com.example.recyclerview.data.model
 
 sealed class MainType
 class SongType(val song: Song) : MainType()
